@@ -36,7 +36,7 @@ func sendMail(message []byte) error {
 
 	err := smtp.SendMail(address, auth, from, recipient, message)
 	if err != nil {
-		fmt.Println("Could not send email with error: ", err)
+		log.Println("Could not send email with error: ", err)
 		return err
 	}
 	fmt.Println("Email sent")
@@ -52,14 +52,14 @@ func hitPeak() bool {
 
 	req, err := http.NewRequest("POST", config.Peaklink, bytes.NewBuffer(reqBody))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 
 	if err != nil {
-		fmt.Println("Error doing request ", err)
+		log.Println("Error doing request ", err)
 	}
 	defer resp.Body.Close()
 	return resp.StatusCode == http.StatusOK
@@ -69,7 +69,7 @@ func hitPeak() bool {
 func hitPythonAnywhere() bool {
 	resp, err := http.Get(BlogPage)
 	if err != nil {
-		fmt.Println("Error doing request ", err)
+		log.Println("Error doing request ", err)
 	}
 	defer resp.Body.Close()
 	return resp.StatusCode == http.StatusOK
@@ -82,25 +82,31 @@ func main() {
 	startTime := time.Now()
 
 	go func() {
-		if hitPeak() {
-			fmt.Println("\nPeak API running effectively")
+		if !hitPeak() {
+			err := sendMail([]byte("Subject: API HealthCheck\r\n" +
+				"Peak API Down, reporting from Golang headquarters"))
+			if err != nil {
+				log.Println(err)
+			}
 		}
+		fmt.Println("\nPeak API running effectively")
 		wg.Done()
 	}()
 
 	go func() {
-		if hitPythonAnywhere() {
-			fmt.Println("\nBlog Page is running smoothly")
+		if !hitPythonAnywhere() {
+			err := sendMail([]byte("Subject: API HealthCheck\r\n" +
+				"Blog Page Down, reporting from Golang headquarters"))
+			if err != nil {
+				log.Println(err)
+			}
 		}
+		fmt.Println("\nBlog Page is running smoothly")
 		wg.Done()
 	}()
 
 	fmt.Println("Started running the concurrent program")
 	wg.Wait()
-	err := sendMail([]byte("All APIs are up and running, reporting from Golang headquarters"))
-	if err != nil {
-		log.Println(err)
-	}
 	fmt.Println("It took the concurrent program ", time.Since(startTime), "to finish")
 	fmt.Println("\nFinished running the concurrent program")
 
