@@ -19,10 +19,11 @@ type login struct {
 }
 
 const (
-	BlogPage = "https://uchencho.pythonanywhere.com/"
-	host     = "smtp.gmail.com"
-	port     = "587"
-	address  = host + ":" + port
+	BlogPage     = "https://uchencho.pythonanywhere.com/"
+	wordCloudGen = "https://wordcloud-generator-ub.herokuapp.com/"
+	host         = "smtp.gmail.com"
+	port         = "587"
+	address      = host + ":" + port
 )
 
 func sendMail(message []byte) error {
@@ -75,9 +76,19 @@ func hitPythonAnywhere() bool {
 	return resp.StatusCode == http.StatusOK
 }
 
+func hitWordCloudGenerator() bool {
+	resp, err := http.Get(wordCloudGen)
+	if err != nil {
+		log.Println("Error making a request to wordCloudGen, ", err)
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode == http.StatusOK
+}
+
 func main() {
 	var wg sync.WaitGroup
-	wg.Add(2)
+	const numberOfWebServices = 3
+	wg.Add(numberOfWebServices)
 
 	startTime := time.Now()
 
@@ -88,8 +99,9 @@ func main() {
 			if err != nil {
 				log.Println(err)
 			}
+		} else {
+			fmt.Println("\nPeak API running effectively")
 		}
-		fmt.Println("\nPeak API running effectively")
 		wg.Done()
 	}()
 
@@ -100,8 +112,22 @@ func main() {
 			if err != nil {
 				log.Println(err)
 			}
+		} else {
+			fmt.Println("\nBlog Page is running smoothly")
 		}
-		fmt.Println("\nBlog Page is running smoothly")
+		wg.Done()
+	}()
+
+	go func() {
+		if !hitWordCloudGenerator() {
+			err := sendMail([]byte("Subject: API HealthCheck\r\n" +
+				"Word Cloud App is Down, reporting from Golang headquarters"))
+			if err != nil {
+				log.Println(err)
+			}
+		} else {
+			fmt.Println("\nWord Cloud app is running smoothly")
+		}
 		wg.Done()
 	}()
 
