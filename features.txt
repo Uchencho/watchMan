@@ -1,0 +1,4 @@
+Watch man runs concurrently checking if all systems/apis are running effectively
+
+- Makes a request to the apis every 5 minutes
+- Send an email if response doesn't come back as expected
