@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/Uchencho/watchMan/config"
 )
@@ -34,7 +36,7 @@ func hitPeak() {
 	if err != nil {
 		fmt.Println("Error doing request ", err)
 	}
-	fmt.Println("Status code is ", resp.StatusCode)
+	fmt.Println("The Status code for peak is ", resp.StatusCode)
 	defer resp.Body.Close()
 }
 
@@ -49,6 +51,24 @@ func hitPythonAnywhere() {
 }
 
 func main() {
-	hitPeak()
-	hitPythonAnywhere()
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	startTime := time.Now()
+
+	go func() {
+		hitPeak()
+		wg.Done()
+	}()
+
+	go func() {
+		hitPythonAnywhere()
+		wg.Done()
+	}()
+
+	fmt.Println("Started running the concurrent program")
+	wg.Wait()
+	fmt.Println("It took the concurrent program ", time.Since(startTime), "to finish")
+	fmt.Println("\nFinished running the concurrent program")
+
 }
