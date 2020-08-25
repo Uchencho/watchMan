@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/Uchencho/watchMan/config"
@@ -15,20 +14,16 @@ type login struct {
 	Password string `json:"password"`
 }
 
-const link = "https://peak-tutors-ub.herokuapp.com/api/accounts/login/"
+const BlogPage = "https://uchencho.pythonanywhere.com/"
 
-func main() {
-
+func hitPeak() {
 	l := login{
 		Username: config.PeakUsername,
 		Password: config.PeakPassword,
 	}
-	reqBody, err := json.Marshal(l)
-	if err != nil {
-		fmt.Println("Error Marshalling request ", err)
-	}
+	reqBody, _ := json.Marshal(l)
 
-	req, err := http.NewRequest("POST", link, bytes.NewBuffer(reqBody))
+	req, err := http.NewRequest("POST", config.Peaklink, bytes.NewBuffer(reqBody))
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -40,12 +35,20 @@ func main() {
 		fmt.Println("Error doing request ", err)
 	}
 	fmt.Println("Status code is ", resp.StatusCode)
+	defer resp.Body.Close()
+}
 
+func hitPythonAnywhere() {
+	resp, err := http.Get(BlogPage)
+	if err != nil {
+		fmt.Println("Error doing request ", err)
+	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error Reading body ", err)
-	}
-	fmt.Println(string(body))
+	fmt.Println("The status code for blog page is ", resp.StatusCode)
+}
+
+func main() {
+	hitPeak()
+	hitPythonAnywhere()
 }
